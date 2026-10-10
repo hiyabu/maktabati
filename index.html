@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مكتبتي | إدارة مكتبتك الشخصية</title>
+  <meta name="description" content="مكتبتي — موقع عربي لإدارة مكتبتك الشخصية: أضف كتبك، تتبع قراءتك، وابحث وصنّف بسهولة." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23143532'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='%23faf6ee'>📚</text></svg>" />
+</head>
+<body>
+
+  <!-- ===== الترويسة ===== -->
+  <header class="header">
+    <div class="container header-inner">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">📚</span>
+        <div>
+          <h1 class="brand-title">مكتبتي</h1>
+          <p class="brand-sub">مكتبتك الشخصية .. نظّم قراءتك</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-ghost" id="resetBtn" title="استعادة البيانات التجريبية">↺ استعادة التجريبي</button>
+        <button class="btn btn-primary" id="addBtn">＋ إضافة كتاب</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ===== الإحصائيات ===== -->
+    <section class="stats" aria-label="إحصائيات المكتبة">
+      <div class="stat-card">
+        <span class="stat-icon">📖</span>
+        <div>
+          <span class="stat-num" id="statTotal">0</span>
+          <span class="stat-label">إجمالي الكتب</span>
+        </div>
+      </div>
+      <div class="stat-card stat-reading">
+        <span class="stat-icon">📘</span>
+        <div>
+          <span class="stat-num" id="statReading">0</span>
+          <span class="stat-label">أقرأ حاليًا</span>
+        </div>
+      </div>
+      <div class="stat-card stat-done">
+        <span class="stat-icon">✅</span>
+        <div>
+          <span class="stat-num" id="statDone">0</span>
+          <span class="stat-label">كتب مكتملة</span>
+        </div>
+      </div>
+      <div class="stat-card stat-todo">
+        <span class="stat-icon">🕓</span>
+        <div>
+          <span class="stat-num" id="statTodo">0</span>
+          <span class="stat-label">لم أبدأها</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== البحث والتصفية ===== -->
+    <section class="toolbar" aria-label="البحث والتصفية">
+      <div class="search-box">
+        <span aria-hidden="true">🔍</span>
+        <input type="search" id="searchInput" placeholder="ابحث بالعنوان أو المؤلف…" autocomplete="off" />
+      </div>
+      <div class="filters">
+        <select id="categoryFilter" aria-label="تصفية حسب التصنيف">
+          <option value="all">كل التصنيفات</option>
+        </select>
+        <select id="statusFilter" aria-label="تصفية حسب حالة القراءة">
+          <option value="all">كل الحالات</option>
+          <option value="todo">لم أبدأ</option>
+          <option value="reading">أقرأ حاليًا</option>
+          <option value="done">انتهيت</option>
+        </select>
+        <select id="sortSelect" aria-label="ترتيب الكتب">
+          <option value="newest">الأحدث أولًا</option>
+          <option value="title">حسب العنوان</option>
+          <option value="author">حسب المؤلف</option>
+        </select>
+      </div>
+    </section>
+
+    <p class="result-count" id="resultCount"></p>
+
+    <!-- ===== شبكة الكتب ===== -->
+    <section class="grid" id="booksGrid" aria-live="polite"></section>
+
+    <div class="empty hidden" id="emptyState">
+      <div class="empty-icon">📭</div>
+      <h2>لا توجد كتب مطابقة</h2>
+      <p>جرّب تغيير البحث أو التصفية، أو أضف كتابًا جديدًا إلى مكتبتك.</p>
+      <button class="btn btn-primary" id="emptyAddBtn">＋ أضف كتابك الأول</button>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>صُنع بحب للقارئ العربي 📚 — تُحفظ بياناتك محليًا في متصفحك (localStorage)</p>
+    </div>
+  </footer>
+
+  <!-- ===== نافذة إضافة / تعديل ===== -->
+  <div class="overlay hidden" id="bookModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h2 id="modalTitle">إضافة كتاب جديد</h2>
+        <button class="icon-btn" id="closeModalBtn" aria-label="إغلاق">✕</button>
+      </div>
+      <form id="bookForm" novalidate>
+        <input type="hidden" id="bookId" />
+        <div class="form-row">
+          <div class="field">
+            <label for="titleInput">عنوان الكتاب *</label>
+            <input type="text" id="titleInput" placeholder="مثال: مقدمة ابن خلدون" required maxlength="120" />
+          </div>
+          <div class="field">
+            <label for="authorInput">المؤلف *</label>
+            <input type="text" id="authorInput" placeholder="مثال: ابن خلدون" required maxlength="80" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="categoryInput">التصنيف *</label>
+            <input type="text" id="categoryInput" list="categoryList" placeholder="مثال: تاريخ" required maxlength="40" />
+            <datalist id="categoryList"></datalist>
+          </div>
+          <div class="field">
+            <label for="statusInput">حالة القراءة *</label>
+            <select id="statusInput" required>
+              <option value="todo">لم أبدأ</option>
+              <option value="reading">أقرأ حاليًا</option>
+              <option value="done">انتهيت</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="pagesInput">عدد الصفحات</label>
+            <input type="number" id="pagesInput" min="1" max="10000" placeholder="مثال: 320" />
+          </div>
+          <div class="field">
+            <label for="yearInput">سنة النشر</label>
+            <input type="number" id="yearInput" min="1000" max="2100" placeholder="مثال: 2020" />
+          </div>
+        </div>
+        <div class="field">
+          <label>تقييمك</label>
+          <div class="stars" id="starsInput" role="radiogroup" aria-label="التقييم">
+            <button type="button" data-v="1">★</button>
+            <button type="button" data-v="2">★</button>
+            <button type="button" data-v="3">★</button>
+            <button type="button" data-v="4">★</button>
+            <button type="button" data-v="5">★</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="notesInput">ملاحظات</label>
+          <textarea id="notesInput" rows="3" maxlength="500" placeholder="انطباعك عن الكتاب، اقتباس أعجبك…"></textarea>
+        </div>
+        <p class="form-error hidden" id="formError">يرجى إدخال العنوان والمؤلف والتصنيف.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelBtn">إلغاء</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn">💾 حفظ الكتاب</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== نافذة تأكيد الحذف ===== -->
+  <div class="overlay hidden" id="deleteModal">
+    <div class="modal modal-sm" role="alertdialog" aria-modal="true" aria-labelledby="delTitle">
+      <div class="del-icon">🗑️</div>
+      <h2 id="delTitle">حذف الكتاب؟</h2>
+      <p id="delText">هل أنت متأكد من حذف هذا الكتاب؟ لا يمكن التراجع عن هذا الإجراء.</p>
+      <div class="modal-actions center">
+        <button class="btn btn-ghost" id="delCancelBtn">إلغاء</button>
+        <button class="btn btn-danger" id="delConfirmBtn">نعم، احذف</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== رسائل النجاح ===== -->
+  <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
